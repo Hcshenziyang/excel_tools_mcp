@@ -1,0 +1,22 @@
+{
+  "name": "@wasziyang/excel-tools-mcp",
+  "version": "0.1.0",
+  "description": "npx launcher for the Excel Tools MCP server",
+  "type": "module",
+  "bin": {
+    "excel-tools-mcp": "bin/excel-tools-mcp.js"
+  },
+  "files": [
+    "bin",
+    "excel_tools/*.py",
+    "pyproject.toml",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node ./bin/excel-tools-mcp.js"
+  },
+  "license": "MIT"
+}
