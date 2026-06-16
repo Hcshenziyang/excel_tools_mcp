@@ -1,0 +1,51 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Python virtual environments
+.venv/
+venv/
+env/
+.venv-publish/
+
+# Python build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Node artifacts
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-store/
+
+# Local config and secrets
+.env
+.env.*
+!.env.example
+
+# Local Excel/user data
+tmp/
+temp/
+data/
+workspace/
+*.local.xlsx
+*.local.xls
+*.local.xlsm
+*.local.xlsb
+*.local.ods
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,22 +1,59 @@
 # Excel Tools MCP
 
-A standalone MCP server for inspecting and reading Excel files.
+Excel Tools MCP is a standalone Model Context Protocol server for reading and inspecting local
+Excel files. It is designed for AI assistants that need a compact, structured view of spreadsheets
+without loading an entire workbook into context.
 
-## Tools
+The project supports two distribution paths:
+
+- npm / npx: a Node.js launcher starts the Python MCP server.
+- PyPI / uvx / pip: run the Python MCP server directly.
+
+Only local file paths are supported.
+
+## Version Status
+
+### Published v0.1.0
+
+The first published release supports `.xlsx` files through `openpyxl`.
+
+Available tools:
 
 - `excel_inspect`: inspect workbook metadata and sheet dimensions.
 - `excel_read_range`: read a rectangular cell range.
-- `excel_read_range_normalized`: read a range and virtually fill merged cells from their anchors.
 - `excel_profile_structure`: summarize row structure patterns.
+- `excel_unmerge_cells`: unmerge intersecting merged cells and optionally fill values.
 
-Read-only tools support `.xlsx`, `.xlsm`, `.xls`, `.xlsb`, and `.ods`. File-modifying tools are not
-registered by default.
+Known boundary:
 
-Only local file paths are supported. The old `fileId` server-side download flow has been removed.
+- `.xls` is not supported in v0.1.0.
+- `excel_unmerge_cells` modifies the source workbook, so use it carefully.
+
+### Current main / v0.1.1 preview
+
+The current repository code is intended for v0.1.1, but it has not been published to npm or PyPI yet.
+
+New and changed behavior:
+
+- Read-only tools support `.xlsx`, `.xlsm`, `.xls`, `.xlsb`, and `.ods`.
+- `.xlsx` and `.xlsm` are read with `openpyxl`.
+- `.xls`, `.xlsb`, and `.ods` are read with `python-calamine`.
+- `excel_read_range_normalized` reads a range and virtually fills merged cells from their anchor
+  values without modifying the file.
+- The old file-modifying `excel_unmerge_cells` implementation is kept in the codebase, but it is not
+  registered as an MCP tool by default.
+
+Available tools in current main:
+
+- `excel_inspect`: inspect workbook metadata and sheet dimensions.
+- `excel_read_range`: read a rectangular cell range without merged-cell filling.
+- `excel_read_range_normalized`: read a rectangular range, analyze merged cells, and optionally
+  return anchor-filled data.
+- `excel_profile_structure`: summarize row structure patterns and merged-cell structure.
 
 ## Run With npx
 
-MCP client config:
+This is the easiest route for MCP clients that already support Node-based server launch commands.
 
 ```json
 {
@@ -30,15 +67,15 @@ MCP client config:
 }
 ```
 
-The npm package is a launcher. On first run it creates a Python virtual environment under
-the user's cache directory, installs the bundled Python MCP server, and starts it over stdio.
-
 Requirements:
 
 - Node.js 20+
 - Python 3.10+
 
-Test from a terminal:
+The npm package is a launcher. It creates or reuses a cached Python environment, installs the Python
+MCP server, and starts it over stdio.
+
+Terminal test:
 
 ```bash
 npx --yes @wasziyang/excel-tools-mcp
@@ -51,8 +88,7 @@ host to send JSON-RPC messages over stdin.
 
 By default, the launcher searches for `python3`, then `python`.
 
-Only set `EXCEL_TOOLS_MCP_PYTHON` when Python is installed somewhere unusual. Do not copy
-`/path/to/python` literally.
+Set `EXCEL_TOOLS_MCP_PYTHON` only when Python is installed somewhere unusual:
 
 ```json
 {
@@ -69,41 +105,80 @@ Only set `EXCEL_TOOLS_MCP_PYTHON` when Python is installed somewhere unusual. Do
 }
 ```
 
-Examples:
+## Run With PyPI / uvx
 
-```bash
-EXCEL_TOOLS_MCP_PYTHON=/usr/bin/python3 npx --yes @wasziyang/excel-tools-mcp
-```
-
-```powershell
-$env:EXCEL_TOOLS_MCP_PYTHON = "C:\Users\Alice\AppData\Local\Programs\Python\Python312\python.exe"
-npx --yes @wasziyang/excel-tools-mcp
-```
-
-### Windows, WSL, and VS Code
-
-If your `mcp.json` lives under a Windows path such as:
-
-```text
-C:\Users\<you>\AppData\Roaming\Code\User\mcp.json
-```
-
-VS Code usually starts the MCP server from Windows, not from WSL. In that case Windows must have
-Node.js and Python installed, and Excel file paths should be Windows paths:
+After the Python package is published to PyPI, users with `uv` can run it directly:
 
 ```json
 {
   "mcpServers": {
     "excel-tools-mcp": {
       "type": "stdio",
-      "command": "npx",
-      "args": ["--yes", "@wasziyang/excel-tools-mcp"]
+      "command": "uvx",
+      "args": [
+        "--from",
+        "excel-tools-mcp",
+        "excel-tools-mcp"
+      ]
     }
   }
 }
 ```
 
-Example tool argument:
+Terminal test:
+
+```bash
+uvx --from excel-tools-mcp excel-tools-mcp
+```
+
+You can also install it with pip once it is published:
+
+```bash
+pip install excel-tools-mcp
+excel-tools-mcp
+```
+
+Runtime difference:
+
+```text
+npx -> npm package -> Node launcher -> Python MCP server
+uvx -> PyPI package -> Python MCP server
+pip -> PyPI package -> Python MCP server
+```
+
+## Local Development
+
+Install from the local checkout:
+
+```bash
+pip install -e .
+excel-tools-mcp
+```
+
+Or run the module directly:
+
+```bash
+python3 -m excel_tools.server
+```
+
+For a local npx-style test:
+
+```bash
+npm start
+```
+
+## Tool Arguments Example
+
+```json
+{
+  "file_path": "/absolute/path/to/report.xlsx",
+  "sheet": "Sheet1",
+  "start_cell": "A1",
+  "end_cell": "D20"
+}
+```
+
+For Windows paths:
 
 ```json
 {
@@ -113,6 +188,17 @@ Example tool argument:
   "end_cell": "D20"
 }
 ```
+
+## Windows, WSL, and VS Code
+
+If your `mcp.json` lives under a Windows path such as:
+
+```text
+C:\Users\<you>\AppData\Roaming\Code\User\mcp.json
+```
+
+VS Code usually starts the MCP server from Windows, not from WSL. In that case Windows must have
+Node.js and Python installed, and Excel file paths should be Windows paths.
 
 If you want VS Code on Windows to run the server inside WSL, call `wsl` explicitly:
 
@@ -143,53 +229,7 @@ When the server runs in WSL, use Linux/WSL paths:
 }
 ```
 
-Avoid setting `cwd` until the minimal config works. If you do set it, make sure it is valid in the
-same environment that runs the server.
-
-## Run With uvx
-
-This project can also be distributed as a Python package on PyPI. After it is published to PyPI,
-users who have `uv` installed can run it with `uvx`:
-
-```json
-{
-  "mcpServers": {
-    "excel-tools-mcp": {
-      "type": "stdio",
-      "command": "uvx",
-      "args": [
-        "--from",
-        "excel-tools-mcp",
-        "excel-tools-mcp"
-      ]
-    }
-  }
-}
-```
-
-Terminal test:
-
-```bash
-uvx --from excel-tools-mcp excel-tools-mcp
-```
-
-`uvx` downloads the package from PyPI, creates an isolated cached environment, and runs the
-`excel-tools-mcp` console command declared in `pyproject.toml`.
-
-Requirements:
-
-- `uv`
-- Python compatible with this package, currently Python 3.10+
-
-The npm and uvx routes are equivalent at runtime: both eventually start the same Python MCP server.
-The difference is only the distribution layer:
-
-```text
-npx -> npm package -> Node launcher -> Python MCP server
-uvx -> PyPI package -> Python MCP server
-```
-
-## Run With Docker
+## Docker
 
 Build locally:
 
@@ -215,91 +255,29 @@ MCP client config example:
 
 Inside Docker, pass file paths under `/workspace`, for example `/workspace/report.xlsx`.
 
-Docker images are not published yet. The npm launcher is the recommended installation path for now.
+Docker images are not published yet.
 
-## Run As Python
+## Publishing Notes
 
-```bash
-pip install .
-excel-tools-mcp
-```
+Current package metadata still uses version `0.1.0` until the next release is cut.
 
-Or:
+Before publishing v0.1.1:
 
-```bash
-python3 -m excel_tools.server
-```
+- Update `pyproject.toml` version to `0.1.1`.
+- Update `package.json` version to `0.1.1`.
+- Build and publish the Python package to PyPI.
+- Publish the npm launcher if the npx route should install v0.1.1.
 
-## Publishing To npm
-
-To make `npx --yes @wasziyang/excel-tools-mcp` work for other users, the package name must exist on the npm registry.
-
-Basic flow for this scoped public package:
+Basic npm publish flow:
 
 ```bash
 npm login
 npm publish --access public
 ```
 
-Before publishing, check the current registry state:
+Basic PyPI publish flow:
 
 ```bash
-npm view @wasziyang/excel-tools-mcp
-```
-
-If npm returns package metadata, the package already exists. If npm returns `404`, publish it with
-`npm publish --access public`.
-
-Publishing a new version requires a new semver value. npm does not allow overwriting an already
-published version:
-
-```bash
-npm version patch
-npm publish --access public
-```
-
-Users who do not specify a version get the npm `latest` dist-tag:
-
-```bash
-npx --yes @wasziyang/excel-tools-mcp
-```
-
-That normally resolves to the newest published version tagged as `latest`.
-
-## Publishing To PyPI
-
-Publish to PyPI if you want users to run:
-
-```bash
-uvx --from excel-tools-mcp excel-tools-mcp
-```
-
-Build and upload:
-
-```bash
-python3 -m pip install --upgrade build twine
 python3 -m build
 python3 -m twine upload dist/*
 ```
-
-PyPI also does not allow overwriting an already published version. Before uploading a new release,
-update the version in `pyproject.toml`, for example:
-
-```toml
-version = "0.1.1"
-```
-
-If you publish both npm and PyPI packages, keep `package.json` and `pyproject.toml` versions aligned
-unless you intentionally release one distribution channel ahead of the other.
-
-### Docker Cache Pre-Warm
-
-If a Docker image uses `uvx` to launch the PyPI package, you can pre-warm the uv cache at image build
-time so the container starts faster:
-
-```dockerfile
-RUN uvx --from excel-tools-mcp excel-tools-mcp --help >/dev/null 2>&1 || true
-```
-
-That command downloads and installs the PyPI package into uv's cache during `docker build`. The
-`|| true` keeps the build from failing if the command exits after printing help.

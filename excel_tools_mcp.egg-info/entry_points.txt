@@ -1,2 +1,0 @@
-[console_scripts]
-excel-tools-mcp = excel_tools.server:main
