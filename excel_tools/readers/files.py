@@ -1,14 +1,14 @@
-"""文件验证和workbook打开帮助函数。"""
+"""File validation and workbook opening helpers."""
 
-from contextlib import asynccontextmanager
-from pathlib import Path
-import os
 from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+import os
+from pathlib import Path
 
-from openpyxl import load_workbook
-from openpyxl.workbook import Workbook
-from openpyxl.utils.exceptions import InvalidFileException
 from dotenv import load_dotenv
+from openpyxl import load_workbook
+from openpyxl.utils.exceptions import InvalidFileException
+from openpyxl.workbook import Workbook
 
 from excel_tools.exceptions import (
     FileCorruptedError,
@@ -18,7 +18,6 @@ from excel_tools.exceptions import (
     UnsupportedFileError,
 )
 
-# 自动加载当前目录下的 .env
 _ = load_dotenv()
 
 SUPPORTED_EXTENSIONS = {
@@ -30,12 +29,10 @@ OPENPYXL_EXTENSIONS = {".xlsx", ".xlsm", ".xltx", ".xltm"}
 
 
 def validate_file_path(file_path: str) -> Path:
-    """验证文件路径是否存在，是否为文件，是否为支持的扩展名。"""
-
+    """Validate that the path exists, is a file, and has a supported extension."""
     path = Path(file_path)
 
     if not path.exists():
-        # exists判断文件是否存在
         raise FileNotFoundError_(
             message=f"文件未找到: {file_path}",
             suggested_action="验证文件路径是否正确，并且文件存在。",
@@ -43,7 +40,6 @@ def validate_file_path(file_path: str) -> Path:
         )
 
     if not path.is_file():
-        # is_file判断路径是否为文件
         raise FileNotFoundError_(
             message=f"路径不是文件: {file_path}",
             suggested_action="提供一个文件路径，而不是目录。",
@@ -51,19 +47,14 @@ def validate_file_path(file_path: str) -> Path:
         )
 
     if path.suffix.lower() not in SUPPORTED_EXTENSIONS:
-        # suffix获取文件扩展名
         raise UnsupportedFileError(
-            message=(
-                f"不支持的文件扩展名: {path.suffix} "
-                f"支持的扩展名: {sorted(SUPPORTED_EXTENSIONS)}"
-            ),
-            suggested_action=(
-                ".xls/.xlsb/.ods 仅支持只读工具；需要写回文件时请转换为.xlsx。"
-            ),
+            message=f"不支持的文件扩展名: {path.suffix} 支持的扩展名: {sorted(SUPPORTED_EXTENSIONS)}",
+            suggested_action=".xls/.xlsb/.ods 仅支持只读工具；需要写回文件时请转换为.xlsx。",
             details={"path": str(file_path), "extension": path.suffix},
         )
 
-    return path.resolve()  # resolve将路径解析为绝对路径
+    return path.resolve()
+
 
 @asynccontextmanager
 async def resolve_excel_file_path(file_path: str = "") -> AsyncIterator[Path]:
@@ -85,7 +76,7 @@ def open_workbook(
     read_only: bool = False,
     data_only: bool = False,
 ) -> Workbook:
-    """打开工作簿。"""
+    """Open a workbook with openpyxl for supported editable formats."""
     if path.suffix.lower() not in OPENPYXL_EXTENSIONS:
         raise UnsupportedFileError(
             message=f"当前写入/编辑工具不支持此文件格式: {path.suffix}",
@@ -95,31 +86,22 @@ def open_workbook(
 
     try:
         return load_workbook(str(path), read_only=read_only, data_only=data_only, keep_links=False)
-    except InvalidFileException as e:
+    except InvalidFileException as exc:
         raise UnsupportedFileError(
-            message=f"文件不是有效的xlsx文件: {e}",
-            suggested_action=(
-                "确保文件是有效的.xlsx (Office Open XML)文件，而不是重命名自.xls或其他格式。"
-            ),
+            message=f"文件不是有效的xlsx文件: {exc}",
+            suggested_action="确保文件是有效的.xlsx (Office Open XML)文件，而不是重命名自.xls或其他格式。",
             details={"path": str(path)},
-        ) from e    
-    except Exception as e:
-        msg = str(e).lower()
+        ) from exc
+    except Exception as exc:
+        msg = str(exc).lower()
         if "encrypted" in msg or "password" in msg:
             raise FileEncryptedError(
-                message=f"文件加密或密码保护: {e}",
+                message=f"文件加密或密码保护: {exc}",
                 suggested_action="在处理文件之前删除加密。",
                 details={"path": str(path)},
-            ) from e
+            ) from exc
         raise FileCorruptedError(
-            message=f"无法打开文件: {e}",
+            message=f"无法打开文件: {exc}",
             suggested_action="验证文件是否损坏。",
-            details={"path": str(path), "underlying_error": type(e).__name__},
-        ) from e
-
-if __name__ == "__main__":
-    # 测试validate_file_path函数
-    try:
-        print(validate_file_path("tests/testdata/2.26-3.25.xlsx"))
-    except Exception as e:
-        print(e)
+            details={"path": str(path), "underlying_error": type(exc).__name__},
+        ) from exc

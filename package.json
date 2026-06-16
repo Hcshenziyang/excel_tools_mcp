@@ -9,6 +9,7 @@
   "files": [
     "bin",
     "excel_tools/*.py",
+    "excel_tools/*/*.py",
     "pyproject.toml",
     "README.md"
   ],

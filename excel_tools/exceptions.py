@@ -1,5 +1,8 @@
 """结构化错误，映射到MCP工具错误响应。"""
 
+from excel_tools.models.schemas import ExcelErrorDetail
+
+
 class ExcelMCPError(Exception):
     """基础类。每个工具错误都继承自这个类，所以MCP服务器层可以捕获一种类型并统一序列化。"""
 
@@ -16,13 +19,16 @@ class ExcelMCPError(Exception):
         self.suggested_action = suggested_action
         self.details = details or {}
 
+    def to_model(self) -> ExcelErrorDetail:
+        return ExcelErrorDetail(
+            error_code=self.error_code,
+            message=self.message,
+            suggested_action=self.suggested_action,
+            details=self.details,
+        )
+
     def to_dict(self) -> dict[str, object]:
-        return {
-            "error_code": self.error_code,
-            "message": self.message,
-            "suggested_action": self.suggested_action,
-            "details": self.details,
-        }
+        return self.to_model().model_dump()
 
 
 class FileNotFoundError_(ExcelMCPError):
