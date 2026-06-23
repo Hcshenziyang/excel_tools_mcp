@@ -14,7 +14,10 @@ def format_bounds(bounds: Bounds) -> str:
 
 
 def parse_range(start_cell: str, end_cell: str | None) -> tuple[str, Bounds]:
-    """Return a normalized A1 range label and numeric bounds."""
+    """返回一个元组，包含格式化的范围字符串和对应的 Bounds 对象。
+    例如，输入 "A1" 和 "C3" 将返回
+    ("A1:C3", Bounds(min_col=1, min_row=1, max_col=3, max_row=3))。
+    """
     if ":" in start_cell and end_cell is None:
         parts = start_cell.split(":")
         norm_start, norm_end = parts[0], parts[1]

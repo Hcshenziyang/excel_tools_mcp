@@ -22,16 +22,12 @@ Available tools:
 - `excel_inspect`: inspect workbook metadata and sheet dimensions.
 - `excel_read_range`: read a rectangular cell range.
 - `excel_profile_structure`: summarize row structure patterns.
-- `excel_unmerge_cells`: unmerge intersecting merged cells and optionally fill values.
 
 Known boundary:
 
 - `.xls` is not supported in v0.1.0.
-- `excel_unmerge_cells` modifies the source workbook, so use it carefully.
 
-### Current main / v0.1.1 preview
-
-The current repository code is intended for v0.1.1, but it has not been published to npm or PyPI yet.
+### Published v0.1.1
 
 New and changed behavior:
 
@@ -40,13 +36,10 @@ New and changed behavior:
 - `.xls`, `.xlsb`, and `.ods` are read with `python-calamine`.
 - `excel_read_range_normalized` reads a range and virtually fills merged cells from their anchor
   values without modifying the file.
-- The old file-modifying `excel_unmerge_cells` implementation is kept in the codebase, but it is not
-  registered as an MCP tool by default.
 
-Available tools in current main:
+Available tools in v0.1.1:
 
 - `excel_inspect`: inspect workbook metadata and sheet dimensions.
-- `excel_read_range`: read a rectangular cell range without merged-cell filling.
 - `excel_read_range_normalized`: read a rectangular range, analyze merged cells, and optionally
   return anchor-filled data.
 - `excel_profile_structure`: summarize row structure patterns and merged-cell structure.
@@ -107,7 +100,7 @@ Set `EXCEL_TOOLS_MCP_PYTHON` only when Python is installed somewhere unusual:
 
 ## Run With PyPI / uvx
 
-After the Python package is published to PyPI, users with `uv` can run it directly:
+Users with `uv` can run the PyPI package directly:
 
 ```json
 {
@@ -131,7 +124,7 @@ Terminal test:
 uvx --from excel-tools-mcp excel-tools-mcp
 ```
 
-You can also install it with pip once it is published:
+You can also install it with pip:
 
 ```bash
 pip install excel-tools-mcp
@@ -259,14 +252,11 @@ Docker images are not published yet.
 
 ## Publishing Notes
 
-Current package metadata still uses version `0.1.0` until the next release is cut.
+Release checklist:
 
-Before publishing v0.1.1:
-
-- Update `pyproject.toml` version to `0.1.1`.
-- Update `package.json` version to `0.1.1`.
+- Update versions in `pyproject.toml`, `package.json`, and the npm launcher cache directory.
 - Build and publish the Python package to PyPI.
-- Publish the npm launcher if the npx route should install v0.1.1.
+- Publish the npm launcher if the npx route should install the new version.
 
 Basic npm publish flow:
 
@@ -278,6 +268,6 @@ npm publish --access public
 Basic PyPI publish flow:
 
 ```bash
-python3 -m build
+uv build
 python3 -m twine upload dist/*
 ```

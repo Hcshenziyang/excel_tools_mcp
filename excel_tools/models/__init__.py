@@ -19,8 +19,6 @@ from excel_tools.models.schemas import (
     SheetRequest,
     SheetSummary,
     ToolModel,
-    UnmergeCellsRequest,
-    UnmergeCellsResult,
 )
 
 __all__ = [
@@ -42,6 +40,4 @@ __all__ = [
     "SheetRequest",
     "SheetSummary",
     "ToolModel",
-    "UnmergeCellsRequest",
-    "UnmergeCellsResult",
 ]

@@ -8,7 +8,6 @@ def register_tools() -> None:
     import excel_tools.tools.inspect_excel  # noqa: F401
     import excel_tools.tools.profile_structure  # noqa: F401
     import excel_tools.tools.read_excel  # noqa: F401
-    # excel_tools.tools.unmerged_cells is intentionally not imported: it modifies files.
 
 
 def main() -> None:

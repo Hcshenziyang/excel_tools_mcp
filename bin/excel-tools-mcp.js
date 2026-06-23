@@ -10,7 +10,7 @@ const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const cacheRoot =
   process.env.EXCEL_TOOLS_MCP_CACHE_DIR ||
   join(homedir(), ".cache", "excel-tools-mcp");
-const venvDir = join(cacheRoot, "venv-0.1.0");
+const venvDir = join(cacheRoot, "venv-0.1.1");
 const installMarker = join(venvDir, ".excel-tools-mcp-installed");
 const isWindows = platform() === "win32";
 const venvPython = join(venvDir, isWindows ? "Scripts/python.exe" : "bin/python");
@@ -57,7 +57,7 @@ function hasInstalledDependencies() {
 
   const result = spawnSync(
     venvPython,
-    ["-c", "import mcp, openpyxl, pydantic, dotenv"],
+    ["-c", "import mcp, openpyxl, pydantic, dotenv, python_calamine"],
     { stdio: "ignore" }
   );
   return result.status === 0;

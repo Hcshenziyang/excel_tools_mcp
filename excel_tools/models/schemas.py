@@ -198,18 +198,3 @@ class ProfileStructureResult(ToolModel):
     pattern_row_spans: dict[str, list[tuple[int, int]]] = Field(default_factory=dict, description="模式连续行段")
     backend: str = Field(..., description="分析后端")
     resolved_file_path: str = Field(..., description="解析后的文件绝对路径")
-
-
-class UnmergeCellsRequest(SheetRequest):
-    start_cell: str = Field(..., min_length=1, description="起始单元格")
-    end_cell: str = Field(..., min_length=1, description="结束单元格")
-    fill_with_anchor_value: bool = Field(default=True, description="是否用锚点值填充解除合并后的单元格")
-
-
-class UnmergeCellsResult(ToolModel):
-    sheet: str = Field(..., description="工作表名称")
-    requested_range: str = Field(..., description="请求处理的矩形区域")
-    unmerged_count: int = Field(..., ge=0, description="解除合并的区域数量")
-    unmerged_ranges: list[str] = Field(default_factory=list, description="已解除的区域列表")
-    fill_with_anchor_value: bool = Field(..., description="是否回填了锚点值")
-    resolved_file_path: str = Field(..., description="解析后的文件绝对路径")
