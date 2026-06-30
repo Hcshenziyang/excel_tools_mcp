@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from openpyxl.worksheet.worksheet import Worksheet
 
 from excel_tools.domain.merged_cells import merged_cells_to_map
-from excel_tools.exceptions import SheetNotFoundError
+from excel_tools.domain.sheets import resolve_sheet_name
 from excel_tools.models.schemas import Bounds, PatternInfo, ProfileStructureResult
 from excel_tools.readers.files import OPENPYXL_EXTENSIONS, open_workbook, resolve_excel_file_path
 from excel_tools.readers.selector import get_reader
@@ -106,20 +106,14 @@ async def profile_structure(
 
         workbook = open_workbook(path, read_only=False, data_only=False)
         try:
-            if sheet not in workbook.sheetnames:
-                raise SheetNotFoundError(
-                    message=f"表单 '{sheet}' 未找到。",
-                    suggested_action=f"可用表单: {workbook.sheetnames}",
-                    details={"requested_sheet": sheet, "available_sheets": workbook.sheetnames},
-                )
-
-            worksheet = workbook[sheet]
+            resolved_sheet = resolve_sheet_name(sheet, workbook.sheetnames)
+            worksheet = workbook[resolved_sheet]
             total_rows = worksheet.max_row or 0
             total_cols = worksheet.max_column or 0
 
             if total_rows == 0 or total_cols == 0:
                 return _build_profile_result(
-                    sheet=sheet,
+                    sheet=resolved_sheet,
                     scanned_rows=(0, 0),
                     scanned_cols=(0, 0),
                     total_rows_in_sheet=total_rows,
@@ -147,7 +141,7 @@ async def profile_structure(
             )
 
             return _build_profile_result(
-                sheet=sheet,
+                sheet=resolved_sheet,
                 scanned_rows=(1, scan_rows),
                 scanned_cols=(1, scan_cols),
                 total_rows_in_sheet=total_rows,
@@ -172,20 +166,15 @@ def _profile_reader_backend(
 ) -> ProfileStructureResult:
     reader = get_reader(path)
     summaries = reader.inspect_workbook(path)
-    summary = next((item for item in summaries if item.name == sheet), None)
-    if summary is None:
-        available_sheets = [item.name for item in summaries]
-        raise SheetNotFoundError(
-            message=f"表单 '{sheet}' 未找到。",
-            suggested_action=f"可用表单: {available_sheets}",
-            details={"requested_sheet": sheet, "available_sheets": available_sheets},
-        )
+    available_sheets = [item.name for item in summaries]
+    resolved_sheet = resolve_sheet_name(sheet, available_sheets)
+    summary = next(item for item in summaries if item.name == resolved_sheet)
 
     total_rows = summary.rows or 0
     total_cols = summary.cols or 0
     if total_rows == 0 or total_cols == 0:
         return _build_profile_result(
-            sheet=sheet,
+            sheet=resolved_sheet,
             scanned_rows=(0, 0),
             scanned_cols=(0, 0),
             total_rows_in_sheet=total_rows,
@@ -202,7 +191,7 @@ def _profile_reader_backend(
     sampled = scan_rows < total_rows or scan_cols < total_cols
     result = reader.read_range(
         path,
-        sheet,
+        resolved_sheet,
         Bounds(min_col=1, min_row=1, max_col=scan_cols, max_row=scan_rows),
         analyze_merged_cells=True,
         fill_merged_cells=False,
@@ -217,7 +206,7 @@ def _profile_reader_backend(
     )
 
     return _build_profile_result(
-        sheet=sheet,
+        sheet=resolved_sheet,
         scanned_rows=(1, scan_rows),
         scanned_cols=(1, scan_cols),
         total_rows_in_sheet=total_rows,

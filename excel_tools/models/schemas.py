@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any, Generic, TypeVar, overload
+from typing import Annotated, Any, Generic, TypeVar, overload
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
 _T = TypeVar("_T")
+SheetName = Annotated[str, StringConstraints(strip_whitespace=False, min_length=1)]
 
 
 class ToolModel(BaseModel):
@@ -78,7 +79,7 @@ class MergedCellInfo(ToolModel):
 class SheetSummary(ToolModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    name: str = Field(..., description="Sheet名称")
+    name: SheetName = Field(..., description="Sheet名称")
     rows: int | None = Field(default=None, description="工作表行数")
     cols: int | None = Field(default=None, description="工作表列数")
     dimension_source: str = Field(..., description="行列维度来源")
@@ -86,6 +87,7 @@ class SheetSummary(ToolModel):
 
 class RangeReadResult(ToolModel):
     backend: str = Field(..., description="读取后端")
+    sheet: SheetName = Field(..., description="实际读取的工作表名称")
     values: list[list[Any]] = Field(default_factory=list, description="二维表格数据")
     merged_cells: list[MergedCellInfo] = Field(default_factory=list, description="合并单元格信息")
     merged_cells_analyzed: bool = Field(default=False, description="是否分析了合并单元格")
@@ -104,12 +106,12 @@ class FilePathRequest(ToolModel):
 
 
 class SheetRequest(FilePathRequest):
-    sheet: str = Field(..., min_length=1, description="工作表名称")
+    sheet: SheetName = Field(..., description="工作表名称")
 
     @field_validator("sheet")
     @classmethod
     def validate_sheet(cls, value: str) -> str:
-        if not value:
+        if not value.strip():
             raise ValueError("sheet 不能为空")
         return value
 
@@ -119,7 +121,7 @@ class InspectExcelRequest(FilePathRequest):
 
 
 class SheetInfo(ToolModel):
-    name: str = Field(..., description="Sheet名称，在workbook中显示的名称。")
+    name: SheetName = Field(..., description="Sheet名称，在workbook中显示的名称。")
     rows: int | None = Field(
         default=None,
         description="包含内容的行数。如果workbook没有声明维度，并且检测失败，则可能为None。",
@@ -164,7 +166,7 @@ class ReadRangeRequest(SheetRequest):
 
 
 class ReadRangeResult(ToolModel):
-    sheet: str = Field(..., description="工作表名称")
+    sheet: SheetName = Field(..., description="工作表名称")
     range: str = Field(..., description="归一化后的范围标识")
     rows: int = Field(..., ge=0, description="返回数据行数")
     cols: int = Field(..., ge=0, description="返回数据列数")
@@ -188,7 +190,7 @@ class ProfileStructureRequest(SheetRequest):
 
 
 class ProfileStructureResult(ToolModel):
-    sheet: str = Field(..., description="工作表名称")
+    sheet: SheetName = Field(..., description="工作表名称")
     scanned_rows: tuple[int, int] = Field(..., description="实际扫描行范围")
     scanned_cols: tuple[int, int] = Field(..., description="实际扫描列范围")
     total_rows_in_sheet: int = Field(..., ge=0, description="工作表总行数")

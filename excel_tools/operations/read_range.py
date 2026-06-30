@@ -27,7 +27,7 @@ async def read_excel_range(
             fill_merged_cells=fill_merged_cells,
         )
         return ReadRangeResult(
-            sheet=sheet,
+            sheet=result.sheet,
             range=range_label,
             rows=len(result.values),
             cols=len(result.values[0]) if result.values else 0,

@@ -11,6 +11,7 @@ from excel_tools.models.schemas import Bounds, MergedCellInfo, MergedCellRange, 
 def build_range_read_result(
     *,
     backend: str,
+    sheet: str,
     values: list[list[Any]],
     requested: Bounds,
     merged_ranges: list[MergedCellRange],
@@ -34,6 +35,7 @@ def build_range_read_result(
 
     return RangeReadResult(
         backend=backend,
+        sheet=sheet,
         values=values,
         merged_cells=merged_cells,
         merged_cells_analyzed=analyze_merged_cells,

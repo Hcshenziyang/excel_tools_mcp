@@ -36,7 +36,7 @@ def error_response_from_exception(
             error_code="invalid_parameter",
             message="入参校验失败",
             suggested_action="请检查工具入参是否完整且格式正确。",
-            details={"validation_errors": exc.errors(include_url=False)},
+            details={"validation_errors": exc.errors(include_url=False, include_context=False)},
         )
         return cast(
             MCPResponse[_T | ExcelErrorDetail],

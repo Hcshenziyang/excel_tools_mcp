@@ -5,7 +5,8 @@ from typing import Any
 
 from excel_tools.domain.merged_cells import build_range_read_result
 from excel_tools.domain.ranges import rects_intersect
-from excel_tools.exceptions import FileCorruptedError, SheetNotFoundError, UnsupportedFileError
+from excel_tools.domain.sheets import resolve_sheet_name
+from excel_tools.exceptions import FileCorruptedError, UnsupportedFileError
 from excel_tools.models.schemas import Bounds, MergedCellRange, RangeReadResult, SheetSummary
 
 
@@ -45,14 +46,8 @@ class CalamineReader:
         workbook = self._open_workbook(path)
         try:
             sheet_names = list(workbook.sheet_names)
-            if sheet not in sheet_names:
-                raise SheetNotFoundError(
-                    message=f"表单 '{sheet}' 未找到。",
-                    suggested_action=f"可用表单: {sheet_names}",
-                    details={"requested_sheet": sheet, "available_sheets": sheet_names},
-                )
-
-            worksheet = workbook.get_sheet_by_name(sheet)
+            resolved_sheet = resolve_sheet_name(sheet, sheet_names)
+            worksheet = workbook.get_sheet_by_name(resolved_sheet)
             rows = worksheet.to_python(skip_empty_area=False, nrows=bounds.max_row)
             values = self._slice_rows(rows, bounds)
             merged_ranges: list[MergedCellRange] = []
@@ -62,6 +57,7 @@ class CalamineReader:
 
             return build_range_read_result(
                 backend=self.backend_name,
+                sheet=resolved_sheet,
                 values=values,
                 requested=bounds,
                 merged_ranges=merged_ranges,

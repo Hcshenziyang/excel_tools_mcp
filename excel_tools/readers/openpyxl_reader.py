@@ -4,7 +4,7 @@ from pathlib import Path
 
 from excel_tools.domain.merged_cells import build_range_read_result
 from excel_tools.domain.ranges import rects_intersect
-from excel_tools.exceptions import SheetNotFoundError
+from excel_tools.domain.sheets import resolve_sheet_name
 from excel_tools.models.schemas import Bounds, MergedCellRange, RangeReadResult, SheetSummary
 from excel_tools.readers.files import open_workbook
 
@@ -37,14 +37,8 @@ class OpenpyxlReader:
     ) -> RangeReadResult:
         workbook = open_workbook(path, read_only=False, data_only=False)
         try:
-            if sheet not in workbook.sheetnames:
-                raise SheetNotFoundError(
-                    message=f"表单 '{sheet}' 未找到。",
-                    suggested_action=f"可用表单: {workbook.sheetnames}",
-                    details={"requested_sheet": sheet, "available_sheets": workbook.sheetnames},
-                )
-
-            worksheet = workbook[sheet]
+            resolved_sheet = resolve_sheet_name(sheet, workbook.sheetnames)
+            worksheet = workbook[resolved_sheet]
             rows = worksheet.iter_rows(
                 min_row=bounds.min_row,
                 max_row=bounds.max_row,
@@ -69,6 +63,7 @@ class OpenpyxlReader:
 
             return build_range_read_result(
                 backend=self.backend_name,
+                sheet=resolved_sheet,
                 values=values,
                 requested=bounds,
                 merged_ranges=merged_ranges,
